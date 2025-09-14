@@ -14,9 +14,7 @@ const __dirname = path.resolve();
 
 // middleware
 if (process.env.NODE_ENV !== "production") {
-    app.use(cors({
-        origin: "http://localhost:5050",
-    }));
+    app.use(cors({origin: "http://localhost:5050",}));
 }
 app.use(express.json());      // parsing JSON bodies (req.bodies)
 
@@ -28,11 +26,11 @@ if (process.env.NODE_ENV === "production") {
 
     app.get("*", (req, res) => {
         res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
-    })
+    });
 }
 
 connectDB().then(() => {
     app.listen(PORT, () => {
-        console.log("server running on port:", PORT);
+        console.log("server started on port:", PORT);
     });
 });
