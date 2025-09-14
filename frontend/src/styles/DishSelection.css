@@ -1,0 +1,269 @@
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.modal-close:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-search {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.modal-filters {
+    margin-bottom: 20px;
+}
+
+.modal-filters .filter-group {
+    margin-bottom: 15px;
+}
+
+.modal-filters .filter-group h4 {
+    margin: 0 0 10px 0;
+    color: #555;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.modal-filters .filter-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.modal-filters .filter-btn {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.modal-filters .filter-btn:hover {
+    background-color: #f5f5f5;
+}
+
+.modal-filters .filter-btn.active {
+    background-color: #2196F3;
+    color: white;
+    border-color: #2196F3;
+}
+
+.clear-filters-btn {
+    margin-top: 10px;
+    padding: 8px 16px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.clear-filters-btn:hover {
+    background-color: #d32f2f;
+}
+
+.modal-dish-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.modal-dish-option {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.modal-dish-option:hover {
+    background-color: #f8f8f8;
+}
+
+.modal-dish-option:last-child {
+    border-bottom: none;
+}
+
+.dish-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dish-name {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+}
+
+.dish-details {
+    display: flex;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.dish-cuisine {
+    color: #666;
+}
+
+.dish-last-eaten {
+    color: #999;
+    font-size: 13px;
+}
+
+.no-dishes {
+    padding: 40px;
+    text-align: center;
+    color: #999;
+}
+
+.modal-body .filters-container {
+    margin: 1rem 0;
+    padding: 0;
+}
+
+.modal-body .filter-group {
+    margin-bottom: 1rem;
+}
+
+.modal-body .filter-header h4 {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.modal-body .filter-btn {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+}
+
+.results-info {
+    margin: 1rem 0 0.5rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.modal-dish-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 1rem;
+}
+
+.modal-dish-option {
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-dish-option:hover {
+    background-color: #f5f5f5;
+    border-color: #007bff;
+}
+
+.dish-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.dish-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.dish-details {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.dish-cuisine {
+    color: #007bff;
+}
+
+.dish-last-eaten.never {
+    color: #999;
+    font-style: italic;
+}
+
+.dish-preferences {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.preference-tag {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}

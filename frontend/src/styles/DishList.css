@@ -1,0 +1,151 @@
+.dish-list-container {
+    margin: 20px;
+}
+
+/* table */
+.dishes-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.dishes-table td:nth-child(1) { width: 35%; } /* name */
+
+.dishes-table td:nth-child(2) { width: 10%; } /* cuisine */
+
+.dishes-table td:nth-child(3) { width: 10%; } /* date */
+
+.dishes-table td:nth-child(4) { width: 35%; } /* pref */
+
+.dishes-table td:nth-child(5) { width: 20%; }  /* actions */
+
+.dishes-table thead tr {
+    background-color: #f5f5f5;
+}
+
+.dishes-table th {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid #ddd;
+}
+
+.dishes-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+/* search and controls */
+.controls-container {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    margin-top: 16px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 8px;
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.sort-select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+}
+
+/* last eaten */
+.last-eaten-date {
+    font-weight: normal;
+}
+
+.last-eaten-date.never {
+    font-weight: 300;
+}
+
+/* preferences */
+.preferences-container {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.preference-tag {
+    padding: 2px 8px;
+    background-color: #e0f7fa;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.no-preferences {
+    color: #999;
+}
+
+/* Action buttons */
+.actions-container {
+    display: flex;
+    gap: 8px;
+}
+
+.edit-link {
+    color: #1976d2;
+    text-decoration: none;
+    padding: 4px 8px;
+    border: 1px solid #1976d2;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.edit-link:hover {
+    background-color: #e3f2fd;
+}
+
+.delete-button {
+    color: #d32f2f;
+    background-color: white;
+    border: 1px solid #d32f2f;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.delete-button:hover {
+    background-color: #ffebee;
+}
+
+/* loading and empty states */
+.loading-message {
+    padding: 24px;
+    text-align: center;
+    color: #666;
+}
+
+.empty-message {
+    padding: 24px;
+    text-align: center;
+    color: #666;
+}
+
+/* delete */
+.delete-confirm {
+    max-width: 400px;
+}
+
+.warning-text {
+    color: #dc3545;
+    font-size: 0.9em;
+    margin-top: 0.5rem;
+}
+
+.btn.danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn.danger:hover {
+    background-color: #c82333;
+}
