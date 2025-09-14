@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import Multiselect from "multiselect-react-dropdown";
+import Select from "react-select";
 import "../styles/EditDish.css";
 import api from "../lib/axios";
 
@@ -28,19 +28,18 @@ export default function EditDish({ isOpen, onClose, dish, onSaved, mode = "edit"
     const [isSaving, setIsSaving] = useState(false);
     const [errors, setErrors] = useState({});
 
-    // predefined key ingredients
     const ingredientOptions = [
-        { cat: "Ingredients", key: "red meat" },
-        { cat: "Ingredients", key: "pork" },
-        { cat: "Ingredients", key: "chicken" },
-        { cat: "Ingredients", key: "seafood" },
-        { cat: "Ingredients", key: "eggs" },
-        { cat: "Ingredients", key: "bread" },
-        { cat: "Ingredients", key: "noodles" },
-        { cat: "Ingredients", key: "pasta" },
-        { cat: "Ingredients", key: "rice" },
-        { cat: "Ingredients", key: "soup" },
-        { cat: "Ingredients", key: "vegetables" },
+        { value: 'red meat', label: 'Red Meat' },
+        { value: 'pork', label: 'Pork' },
+        { value: 'chicken', label: 'Chicken' },
+        { value: 'seafood', label: 'Seafood' },
+        { value: 'eggs', label: 'Eggs' },
+        { value: 'bread', label: 'Bread' },
+        { value: 'noodles', label: 'Noodles' },
+        { value: 'pasta', label: 'Pasta' },
+        { value: 'rice', label: 'Rice' },
+        { value: 'soup', label: 'Soup' },
+        { value: 'vegetables', label: 'Vegetables' }
     ];
 
     // initialise form data when modal opens / mode changes
@@ -86,11 +85,18 @@ export default function EditDish({ isOpen, onClose, dish, onSaved, mode = "edit"
 
     const updateForm = (value) => setForm((prev) => ({ ...prev, ...value }));
 
-    // filter ingredients to only include those who match the selected filter ingredients
     const getSelectedIngredients = () => {
-        return ingredientOptions.filter((option) =>
-            form.ingredients.includes(option.key)
+        if (!Array.isArray(form.ingredients)) return [];
+        return ingredientOptions.filter(opt =>
+            form.ingredients.includes(opt.value)
         );
+    };
+
+    // handling ingr selection change
+    const handleIngredientsChange = (selectedOptions) => {
+        const ingredients = selectedOptions ? selectedOptions.map(opt => opt.value) : [];
+        updateForm({ ingredients });
+        if (errors.ingredients) setErrors({...errors, ingredients: null});
     };
 
     const onSubmit = async (e) => {
@@ -134,16 +140,16 @@ export default function EditDish({ isOpen, onClose, dish, onSaved, mode = "edit"
 
         try {
             setIsSaving(true);
-            let res;
+            let response;
 
             if (isNew) {
-                res = await api.post(`/dishes`, dishData);
+                response = await api.post(`/dishes`, dishData);
             } else {
-                res = await api.patch(`/dishes/${dish._id}`, dishData);
+                response = await api.patch(`/dishes/${dish._id}`, dishData);
             }
 
-            // success --> res.data contains the dish data
-            onSaved(res.data);
+            // success --> response.data contains the dish data
+            onSaved(response.data);
             onClose();
         } catch (err) {
             if (err.response) {
@@ -216,17 +222,14 @@ export default function EditDish({ isOpen, onClose, dish, onSaved, mode = "edit"
 
                         <div className="field">
                             <label>Ingredients</label>
-                            <Multiselect
-                                displayValue="key"
+                            <Select
+                                isMulti
                                 options={ingredientOptions}
-                                selectedValues={getSelectedIngredients()}
-                                onSelect={(list) => {
-                                    updateForm({ ingredients: list.map((i) => i.key) });
-                                    if (errors.ingredients) setErrors({...errors, ingredients: null});
-                                }}
-                                onRemove={(list) => updateForm({ ingredients: list.map((i) => i.key) })}
-                                placeholder="Select ingredients"
-                                showCheckbox={true}
+                                value={getSelectedIngredients()}
+                                onChange={handleIngredientsChange}
+                                placeholder="Select ingredients..."
+                                className="react-select-container"
+                                classNamePrefix="react-select"
                             />
                             {errors.ingredients && <ErrorMsg message={errors.ingredients} />}
                         </div>

@@ -1,1 +1,23 @@
-{}
+{
+  "name": "project",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/meaganhsu/meal-planner.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/meaganhsu/meal-planner/issues"
+  },
+  "homepage": "https://github.com/meaganhsu/meal-planner#readme",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.12.1"
+  }
+}

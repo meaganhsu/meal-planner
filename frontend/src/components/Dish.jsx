@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
-import Multiselect from 'multiselect-react-dropdown';
+import Select from 'react-select';
 import api from "../lib/axios";
 
 const ErrorMsg = ({ message }) => (
@@ -29,18 +29,18 @@ export default function Dish() {
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
 
-    const ingredientOptions = [     // predefined list of ingredient options
-        { cat: 'Ingredients', key: 'red meat' },
-        { cat: 'Ingredients', key: 'pork' },
-        { cat: 'Ingredients', key: 'chicken' },
-        { cat: 'Ingredients', key: 'seafood' },
-        { cat: 'Ingredients', key: 'eggs' },
-        { cat: 'Ingredients', key: 'bread' },
-        { cat: 'Ingredients', key: 'noodles' },
-        { cat: 'Ingredients', key: 'pasta' },
-        { cat: 'Ingredients', key: 'rice' },
-        { cat: 'Ingredients', key: 'soup' },
-        { cat: 'Ingredients', key: 'vegetables' }
+    const ingredientOptions = [
+        { value: 'red meat', label: 'Red Meat' },
+        { value: 'pork', label: 'Pork' },
+        { value: 'chicken', label: 'Chicken' },
+        { value: 'seafood', label: 'Seafood' },
+        { value: 'eggs', label: 'Eggs' },
+        { value: 'bread', label: 'Bread' },
+        { value: 'noodles', label: 'Noodles' },
+        { value: 'pasta', label: 'Pasta' },
+        { value: 'rice', label: 'Rice' },
+        { value: 'soup', label: 'Soup' },
+        { value: 'vegetables', label: 'Vegetables' }
     ];
 
     // fetching dish data
@@ -55,7 +55,7 @@ export default function Dish() {
             setIsNew(false);
 
             try {
-                const response = await api.get(`/dishes/${params.id.toString()}`);      // getting dish from object id
+                const response = await api.get(`/dishes/${params.id.toString()}`);
                 const dish = response.data;
 
                 if (!dish) {
@@ -92,36 +92,34 @@ export default function Dish() {
     async function onSubmit(e) {
         e.preventDefault();
 
-        setErrors({});    // clearing errors
+        setErrors({});
 
         // error handling and edge cases
-        if (!form.name.trim()) {      // name cannot be empty
+        if (!form.name.trim()) {
             setErrors({ name: "Please enter a dish name." });
             return;
         }
 
-        if (form.name.trim().length < 2) {      // name must be greater than 2 chars
+        if (form.name.trim().length < 2) {
             setErrors({ name: "Dish name is too short." });
             return;
         }
 
-        if (form.name.trim().length > 70) {      // name must be less than 70 chars
+        if (form.name.trim().length > 70) {
             setErrors({ name: "Dish name is too long." });
             return;
         }
 
-        if (!form.ingredients || form.ingredients.length === 0) {      // must select at least one key ingredient
+        if (!form.ingredients || form.ingredients.length === 0) {
             setErrors({ ingredients: "Please select at least one ingredient." });
             return;
         }
 
-        if (!form.preferences || form.preferences.length === 0) {      // must select at least one preference
+        if (!form.preferences || form.preferences.length === 0) {
             setErrors({ preferences: "Please select at least one preference." });
             return;
         }
 
-
-        // prepping for api request
         const dishData = {
             name: form.name.trim(),
             cuisine: form.cuisine,
@@ -131,17 +129,14 @@ export default function Dish() {
         };
 
         try {
-            let res;
             if (isNew) {
-                res = await api.post(`/dishes`, dishData);
+                await api.post(`/dishes`, dishData);
             } else {
-                res = await api.patch(`/dishes/${params.id}`, dishData);
+                await api.patch(`/dishes/${params.id}`, dishData);
             }
 
-            // SUCCESS: redirect on successful creation/update
             navigate("/");
         } catch (e) {
-            // ERROR HANDLING: axios wraps errors in e.response
             if (e.response) {
                 const data = e.response.data;
                 if (e.response.status === 409) {
@@ -165,13 +160,22 @@ export default function Dish() {
         }
     }
 
-    // calculating chosen ingredients only when form.ingredients changes
+    // converting selected ingredient values for react-select
     const getSelectedIngredients = () => {
         if (!Array.isArray(form.ingredients)) return [];
-        return ingredientOptions.filter(opt => form.ingredients.includes(opt.key));
+        return ingredientOptions.filter(opt =>
+            form.ingredients.includes(opt.value)
+        );
     };
 
-    if (isLoading) {     // showing loading state
+    // handling ingredient selection change
+    const handleIngredientsChange = (selectedOptions) => {
+        const ingredients = selectedOptions ? selectedOptions.map(opt => opt.value) : [];
+        updateForm({ ingredients });
+        if (errors.ingredients) setErrors({...errors, ingredients: null});
+    };
+
+    if (isLoading) {
         return <div>Loading...</div>;
     }
 
@@ -197,7 +201,7 @@ export default function Dish() {
                                     value={form.name}
                                     onChange={(e) => {
                                         updateForm({ name: e.target.value });
-                                        if (errors.name) setErrors({...errors, name: null});     // clearing errors when user starts typing
+                                        if (errors.name) setErrors({...errors, name: null});
                                     }}
                                     required
                                 />
@@ -225,21 +229,14 @@ export default function Dish() {
                         <div>
                             <label htmlFor="ingredients">Ingredients</label>
                             <div>
-                                <Multiselect
-                                    displayValue="key"
+                                <Select
+                                    isMulti
                                     options={ingredientOptions}
-                                    selectedValues={getSelectedIngredients()}
-                                    onSelect={(selectedList) => {
-                                        const ingredients = selectedList.map(item => item.key);
-                                        updateForm({ ingredients });
-                                        if (errors.ingredients) setErrors({...errors, ingredients: null});
-                                    }}
-                                    onRemove={(selectedList) => {
-                                        const ingredients = selectedList.map(item => item.key);
-                                        updateForm({ ingredients });
-                                    }}
-                                    placeholder="Select ingredients"
-                                    showCheckbox={true}
+                                    value={getSelectedIngredients()}
+                                    onChange={handleIngredientsChange}
+                                    placeholder="Select ingredients..."
+                                    className="react-select-container"
+                                    classNamePrefix="react-select"
                                 />
                                 {errors.ingredients && <ErrorMsg message={errors.ingredients} />}
                             </div>

@@ -59,6 +59,89 @@
     outline: none;
 }
 
+.react-select-container {
+    margin-top: 0.5rem;
+}
+
+.react-select-container .react-select__control {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    min-height: 38px;
+    box-shadow: none;
+}
+
+.react-select-container .react-select__control:hover {
+    border-color: #bbb;
+}
+
+.react-select-container .react-select__control--is-focused {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.react-select-container .react-select__value-container {
+    padding: 0 8px;
+}
+
+.react-select-container .react-select__input-container {
+    margin: 0;
+    padding: 0;
+}
+
+.react-select-container .react-select__multi-value {
+    background-color: #e3f2fd;
+    border-radius: 4px;
+}
+
+.react-select-container .react-select__multi-value__label {
+    color: #1976d2;
+    font-size: 0.875rem;
+    padding: 2px 6px;
+}
+
+.react-select-container .react-select__multi-value__remove {
+    color: #1976d2;
+    border-radius: 0 4px 4px 0;
+}
+
+.react-select-container .react-select__multi-value__remove:hover {
+    background-color: #bbdefb;
+    color: #0d47a1;
+}
+
+.react-select-container .react-select__menu {
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.react-select-container .react-select__option {
+    font-size: 0.875rem;
+    padding: 8px 12px;
+}
+
+.react-select-container .react-select__option--is-focused {
+    background-color: #f8f9fa;
+}
+
+.react-select-container .react-select__option--is-selected {
+    background-color: #007bff;
+    color: white;
+}
+
+.react-select-container .react-select__indicator {
+    padding: 6px;
+}
+
+.react-select-container .react-select__indicator:hover {
+    color: #666;
+}
+
+.react-select-container .react-select__placeholder {
+    color: #999;
+    font-size: 0.875rem;
+}
+
 .prefs-row {
     display: flex;
     gap: 0.5rem;
@@ -74,6 +157,7 @@
     background: #f0f0f0;
     cursor: pointer;
     user-select: none;
+    transition: background-color 0.2s ease;
 }
 
 .pref-pill input {
@@ -82,6 +166,14 @@
 
 .pref-pill.checked {
     background: #d4f0ff;
+}
+
+.pref-pill:hover {
+    background: #e0e0e0;
+}
+
+.pref-pill.checked:hover {
+    background: #b3e0ff;
 }
 
 .modal-footer {
@@ -98,6 +190,9 @@
     border-radius: 6px;
     border: none;
     cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
 }
 
 .btn.primary {
@@ -105,9 +200,22 @@
     color: white;
 }
 
+.btn.primary:hover:not(:disabled) {
+    background: #0056b3;
+}
+
 .btn.secondary {
     background: #6c757d;
     color: white;
+}
+
+.btn.secondary:hover:not(:disabled) {
+    background: #545b62;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .edit-link {
@@ -123,4 +231,3 @@
 .edit-link:hover {
     color: #0056b3;
 }
-
