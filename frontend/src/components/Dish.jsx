@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router";
 import Multiselect from 'multiselect-react-dropdown';
+import api from "../lib/axios";
 
 const ErrorMsg = ({ message }) => (
     <div style={{
@@ -45,27 +46,17 @@ export default function Dish() {
     // fetching dish data
     useEffect(() => {
         async function fetchData() {
-            const id = params.id?.toString() || undefined;       // extracting dish id from the url
-            if (!id) {        // if id does not exist
+            const id = params.id?.toString() || undefined;
+            if (!id) {
                 setIsLoading(false);
                 return;
             }
 
-            setIsNew(false);      // indicating dish edit
+            setIsNew(false);
 
             try {
-                // fetching data from api
-                const response = await fetch(
-                    `http://localhost:5050/record/${params.id.toString()}`
-                );
-
-                if (!response.ok) {       // http error
-                    const message = `An error has occurred: ${response.statusText}`;
-                    console.error(message);
-                    return;
-                }
-
-                const dish = await response.json();
+                const response = await api.get(`/dishes/${params.id.toString()}`);      // getting dish from object id
+                const dish = response.data;
 
                 if (!dish) {
                     console.warn(`Meal with id ${id} not found`);
@@ -140,49 +131,37 @@ export default function Dish() {
         };
 
         try {
-            let response;
+            let res;
             if (isNew) {
-                // add new dish operation
-                response = await fetch(`http://localhost:5050/record`, {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json",},
-                    body: JSON.stringify(dishData),
-                });
+                res = await api.post(`/dishes`, dishData);
             } else {
-                // update dish operation
-                response = await fetch(`http://localhost:5050/record/${params.id}`, {
-                    method: "PATCH",
-                    headers: {"Content-Type": "application/json",},
-                    body: JSON.stringify(dishData),
-                });
+                res = await api.patch(`/dishes/${params.id}`, dishData);
             }
 
-            if (response.status === 409) {
-                const data = await response.json();
-                setErrors({ name: data.message });
-                return;
-            }
-
-            if (response.status === 400) {
-                const data = await response.json();
-                if (data.message.includes("ingredient")) {
-                    setErrors({ ingredients: data.message });
-                } else if (data.message.includes("preference")) {
-                    setErrors({ preferences: data.message });
-                } else {
-                    setErrors({ name: data.message });
-                }
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error(`HTTP error. status: ${response.status}`);
-            }
-
-            navigate("/");     // success —> redirecting to home dish page
+            // SUCCESS: redirect on successful creation/update
+            navigate("/");
         } catch (e) {
-            console.error('A problem occurred adding or updating a meal: ', e);
-            alert("Failed to save dish. Please try again.");
+            // ERROR HANDLING: axios wraps errors in e.response
+            if (e.response) {
+                const data = e.response.data;
+                if (e.response.status === 409) {
+                    setErrors({ name: data.message });
+                } else if (e.response.status === 400) {
+                    if (data.message.includes("ingredient")) {
+                        setErrors({ ingredients: data.message });
+                    } else if (data.message.includes("preference")) {
+                        setErrors({ preferences: data.message });
+                    } else {
+                        setErrors({ name: data.message });
+                    }
+                } else {
+                    console.error('A problem occurred adding or updating a meal: ', e);
+                    alert("Failed to save dish. Please try again.");
+                }
+            } else {
+                console.error('A problem occurred adding or updating a meal: ', e);
+                alert("Failed to save dish. Please try again.");
+            }
         }
     }
 

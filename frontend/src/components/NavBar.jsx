@@ -1,6 +1,6 @@
 import "../styles/NavBar.css";
 
-// navigation bar to dishes or calendar page (dishes = default)
+// navigation bar to dishes or calendar page (dishes page = default)
 export default function Navbar() {
     return (
         <nav className="nav">

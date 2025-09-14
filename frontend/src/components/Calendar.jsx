@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isAfter, isBefore, subWeeks, addWeeks, startOfDay } from "date-fns";
 import DishSelection from "../components/DishSelection";
 import "../styles/Calendar.css";
+import api from "../lib/axios";
 
 const Calendar = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -47,13 +48,12 @@ const Calendar = () => {
         return dateStart >= todayStart;
     };
 
-    // fetching dishes from API
+    // fetching dishes from api
     useEffect(() => {
         async function fetchDishes() {
             try {
-                const response = await fetch('http://localhost:5050/record/');
-                if (!response.ok) throw new Error("Failed to fetch dishes");
-                setDishes(await response.json());
+                const response = await api.get('/dishes/');
+                setDishes(response.data);
             } catch (e) {
                 console.error("Error fetching dishes:", e);
             }
@@ -79,17 +79,17 @@ const Calendar = () => {
     // fetch meal plan for a specific week
     const fetchMealPlanForWeek = async (weekStartDate) => {
         try {
-            const response = await fetch(`http://localhost:5050/api/calendar/${weekStartDate}`);
-            if (!response.ok && response.status !== 404) {
-                throw new Error("Failed to fetch meal plan");
-            }
-            const data = response.status === 404 ? { lunch: {}, dinner: {} } : await response.json();
+            const response = await api.get(`/calendar/${weekStartDate}`);
+            const data = response.status === 404 ? { lunch: {}, dinner: {} } : response.data;
             return {
                 weekStart: weekStartDate,
                 lunch: data.lunch || {},
                 dinner: data.dinner || {}
             };
         } catch (e) {
+            if (e.response?.status === 404) {
+                return { weekStart: weekStartDate, lunch: {}, dinner: {} };
+            }
             console.error("Error fetching meal plan:", e);
             return { weekStart: weekStartDate, lunch: {}, dinner: {} };
         }
@@ -111,21 +111,11 @@ const Calendar = () => {
     // save meal plan to archive
     const saveMealPlan = async (updatedMealPlan) => {
         try {
-            const response = await fetch(`http://localhost:5050/api/calendar`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    weekStart: updatedMealPlan.weekStart,
-                    lunch: updatedMealPlan.lunch,
-                    dinner: updatedMealPlan.dinner
-                }),
+            await api.post(`/calendar`, {
+                weekStart: updatedMealPlan.weekStart,
+                lunch: updatedMealPlan.lunch,
+                dinner: updatedMealPlan.dinner
             });
-
-            if (!response.ok) {
-                throw new Error("Failed to save meal plan");
-            }
         } catch (error) {
             console.error("Error saving meal plan:", error);
         }
@@ -135,9 +125,9 @@ const Calendar = () => {
     const handleSlotClick = (day, meal) => {
         if (!editDate(day)) return;     // ignoring clicks on days before current day
 
-        if (swapMode && swapSource) {       // if in swap mode, then clicking will activate the swap
+        if (swapMode && swapSource) {         // if in swap mode, then clicking will activate the swap
             handleSwapComplete(day, meal);
-        } else {        // otherwise clicking the slot will open the modal for dish selection
+        } else {                              // otherwise clicking the slot will open the modal for dish selection
             setSelectedSlot({date: day, meal});
             setShowDishModal(true);
         }
@@ -238,7 +228,7 @@ const Calendar = () => {
         }
     };
 
-    const cancelSwap = () => {      // cancelling on-going swap
+    const cancelSwap = () => {      // cancelling ongoing swap
         setSwapMode(false);
         setSwapSource(null);
     };
@@ -252,13 +242,13 @@ const Calendar = () => {
         // checking the maximum dishes per slot
         const currDishes = mealPlan[mealType][dateKey] || [];
         if (currDishes.length >= 5) {
-            alert("Maximum of 5 dishes per slot reached");
+            alert("Maximum of 5 dishes per slot reached.");
             return;
         }
 
         // checking for duplicate dishes
         if (currDishes.includes(dish._id)) {
-            alert("This dish is already added to this meal");
+            alert("This dish is already added to this meal.");
             return;
         }
 
@@ -282,24 +272,15 @@ const Calendar = () => {
         const mealDate = new Date(date);
         mealDate.setHours(0, 0, 0, 0);
 
-        // only updating today or past days
         if (mealDate <= today) {
             try {
-                const response = await fetch(`http://localhost:5050/record/${dishId}/last-eaten`, {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        lastEaten: date.toISOString()
-                    }),
+                const response = await api.patch(`/dishes/${dishId}/last-eaten`, {
+                    lastEaten: date.toISOString()
                 });
 
-                const result = await response.json();
+                const result = response.data;
 
-                if (!response.ok) {
-                    console.error("Failed to update last eaten date:", result);
-                } else if (!result.skipped) {
+                if (!result.skipped) {
                     const dish = dishes.find(d => d._id === dishId);
                     if (dish) {
                         const updatedDishes = dishes.map(d =>

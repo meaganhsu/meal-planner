@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Multiselect from "multiselect-react-dropdown";
 import "../styles/EditDish.css";
+import api from "../lib/axios";
 
 const ErrorMsg = ({ message }) => (
     <div style={{
@@ -136,53 +137,35 @@ export default function EditDish({ isOpen, onClose, dish, onSaved, mode = "edit"
             let res;
 
             if (isNew) {
-                // create dish operation
-                res = await fetch(`http://localhost:5050/record`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(dishData),
-                });
-            }
-            else {
-                // update dish operation
-                res = await fetch(`http://localhost:5050/record/${dish._id}`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(dishData),
-                });
+                res = await api.post(`/dishes`, dishData);
+            } else {
+                res = await api.patch(`/dishes/${dish._id}`, dishData);
             }
 
-            const responseData = await res.json();
-
-            // handling backend validation errors
-            if (res.status === 409) {
-                setErrors({ name: responseData.message || "A dish with this name already exists." });
-                setIsSaving(false);
-                return;
-            }
-
-            if (res.status === 400) {
-                if (responseData.message.includes("ingredient")) {
-                    setErrors({ ingredients: responseData.message });
-                } else if (responseData.message.includes("preference")) {
-                    setErrors({ preferences: responseData.message });
-                } else {
-                    setErrors({ name: responseData.message });
-                }
-                setIsSaving(false);
-                return;
-            }
-
-            if (!res.ok) {
-                throw new Error(`HTTP error ${res.status}`);
-            }
-
-            // success —> close modal and refresh
-            onSaved(responseData);
+            // success --> res.data contains the dish data
+            onSaved(res.data);
             onClose();
         } catch (err) {
-            console.error(`Failed to ${isNew ? 'create' : 'update'} dish:`, err);
-            alert(`Failed to ${isNew ? 'create' : 'save'} dish. Please try again.`);
+            if (err.response) {
+                const responseData = err.response.data;
+                if (err.response.status === 409) {
+                    setErrors({ name: responseData.message || "A dish with this name already exists." });
+                } else if (err.response.status === 400) {
+                    if (responseData.message.includes("ingredient")) {
+                        setErrors({ ingredients: responseData.message });
+                    } else if (responseData.message.includes("preference")) {
+                        setErrors({ preferences: responseData.message });
+                    } else {
+                        setErrors({ name: responseData.message });
+                    }
+                } else {
+                    console.error(`Failed to ${isNew ? 'create' : 'update'} dish:`, err);
+                    alert(`Failed to ${isNew ? 'create' : 'save'} dish. Please try again.`);
+                }
+            } else {
+                console.error(`Failed to ${isNew ? 'create' : 'update'} dish:`, err);
+                alert(`Failed to ${isNew ? 'create' : 'save'} dish. Please try again.`);
+            }
         } finally {
             setIsSaving(false);
         }

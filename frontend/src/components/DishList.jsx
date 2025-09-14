@@ -3,6 +3,7 @@ import Filter from "./Filter.jsx";
 import EditDish from "./EditDish.jsx";
 import Pagination from "./Pagination";
 import "../styles/DishList.css";
+import api from "../lib/axios";
 
 // rendering a single dish row within the table list
 const Dish = (props) => {
@@ -112,33 +113,26 @@ export default function DishList() {
 
     // fetching records from the db server, triggered when the search query changes
     useEffect(() => {
-        async function getDishes() {
+        const fetchDishes = async () => {
             setIsLoading(true);
-            try {
-                const url = searchTerm
-                    ? `http://localhost:5050/record/search?name=${encodeURIComponent(searchTerm)}`
-                    : `http://localhost:5050/record/`;
 
-                const response = await fetch( url);
-                if (!response.ok) {
-                    const message = `An error occurred: ${response.statusText}`;
-                    console.error(message);
-                    return;
-                }
-                const data = await response.json();
-                setDishes(data);
+            try {
+                const endpoint = searchTerm
+                    ? `/dishes/search?name=${encodeURIComponent(searchTerm)}`
+                    : '/dishes/';
+
+                const response = await api.get(endpoint);
+                setDishes(response.data);
+
             } catch (error) {
-                console.error("Fetch error:", error);
+                console.error("Failed to fetch dishes:", error);
             } finally {
                 setIsLoading(false);
             }
-        }
+        };
 
-        const debounceTimer = setTimeout(() => {      // avoiding rapid requests during typing
-            getDishes();
-        }, 300);
-
-        return () => clearTimeout(debounceTimer);
+        const timer = setTimeout(fetchDishes, 300);
+        return () => clearTimeout(timer);
     }, [searchTerm]);
 
     // receives filtered dishes from the Filter component
@@ -166,17 +160,10 @@ export default function DishList() {
 
     async function deleteDish(id) {
         try {
-            const response = await fetch(`http://localhost:5050/record/${id}`, {
-                method: "DELETE",
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to delete dish: ${response.statusText}`);
-            }
-
+            await api.delete(`/dishes/${id}`);
             const newDishes = dishes.filter((el) => el._id !== id);
             setDishes(newDishes);
-            setDeleteConfirm({ isOpen: false, dishId: null, dishName: "" });       // close modal
+            setDeleteConfirm({ isOpen: false, dishId: null, dishName: "" });
         } catch (error) {
             console.error(error);
             window.alert("Failed to delete dish. Please try again.");
