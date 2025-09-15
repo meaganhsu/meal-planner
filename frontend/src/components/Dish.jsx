@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import Select from 'react-select';
 import api from "../lib/axios";
+import { CuisineType, FamilyMember, IngredientType } from "../lib/constants.js";
 
 const ErrorMsg = ({ message }) => (
     <div style={{
@@ -17,7 +18,7 @@ const ErrorMsg = ({ message }) => (
 export default function Dish() {
     const [form, setForm] = useState({
         name: "",
-        cuisine: "asian",
+        cuisine: CuisineType.ASIAN,
         ingredients: [],
         preferences: [],
         lastEaten: ""
@@ -29,19 +30,10 @@ export default function Dish() {
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
 
-    const ingredientOptions = [
-        { value: 'red meat', label: 'Red Meat' },
-        { value: 'pork', label: 'Pork' },
-        { value: 'chicken', label: 'Chicken' },
-        { value: 'seafood', label: 'Seafood' },
-        { value: 'eggs', label: 'Eggs' },
-        { value: 'bread', label: 'Bread' },
-        { value: 'noodles', label: 'Noodles' },
-        { value: 'pasta', label: 'Pasta' },
-        { value: 'rice', label: 'Rice' },
-        { value: 'soup', label: 'Soup' },
-        { value: 'vegetables', label: 'Vegetables' }
-    ];
+    const ingredientOptions = Object.entries(IngredientType).map(([key, value]) => ({
+        value,
+        label: key.charAt(0).toUpperCase() + key.slice(1).toLowerCase().replace('_', ' ')
+    }));
 
     // fetching dish data
     useEffect(() => {
@@ -66,7 +58,7 @@ export default function Dish() {
 
                 setForm({
                     name: dish.name || "",
-                    cuisine: dish.cuisine || "asian",
+                    cuisine: dish.cuisine || CuisineType.ASIAN,
                     ingredients: Array.isArray(dish.ingredients) ? dish.ingredients : [],
                     preferences: Array.isArray(dish.preferences) ? dish.preferences : [],
                     lastEaten: dish.lastEaten || ""
@@ -218,10 +210,11 @@ export default function Dish() {
                                     value={form.cuisine}
                                     onChange={(e) => updateForm({ cuisine: e.target.value })}
                                 >
-                                    <option value="asian">Asian</option>
-                                    <option value="chinese">Chinese</option>
-                                    <option value="japanese">Japanese</option>
-                                    <option value="western">Western</option>
+                                    {Object.entries(CuisineType).map(([key, value]) => (
+                                        <option key={value} value={value}>
+                                            {key.charAt(0).toUpperCase() + key.slice(1).toLowerCase()}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
@@ -245,13 +238,11 @@ export default function Dish() {
                         <div className="container">
                             <label htmlFor="preferences">Preferences</label>
                             <div className="row" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                {["Hubert", "Cherry", "Haley", "Ryan", "Meagan"].map((member) => {
-                                    const memberKey = member.toLowerCase();
-                                    const isChecked = Array.isArray(form.preferences) && form.preferences.includes(memberKey);
-
+                                {Object.entries(FamilyMember).map(([key, value]) => {
+                                    const isChecked = Array.isArray(form.preferences) && form.preferences.includes(value);
                                     return (
                                         <label
-                                            key={memberKey}
+                                            key={value}
                                             style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -264,19 +255,19 @@ export default function Dish() {
                                         >
                                             <input
                                                 type="checkbox"
-                                                name={memberKey}
-                                                value={memberKey}
+                                                name={value}
+                                                value={value}
                                                 style={{ marginRight: '0.5rem' }}
                                                 checked={isChecked}
                                                 onChange={() => {
                                                     const updatedPrefs = isChecked
-                                                        ? form.preferences.filter(pref => pref !== memberKey)
-                                                        : [...form.preferences, memberKey];
+                                                        ? form.preferences.filter(pref => pref !== value)
+                                                        : [...form.preferences, value];
                                                     updateForm({ preferences: updatedPrefs });
                                                     if (errors.preferences) setErrors({...errors, preferences: null});
                                                 }}
                                             />
-                                            <span>{member.charAt(0).toUpperCase() + member.slice(1)}</span>
+                                            <span>{key.charAt(0).toUpperCase() + key.slice(1)}</span>
                                         </label>
                                     );
                                 })}

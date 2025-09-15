@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import Select from "react-select";
 import "../styles/EditDish.css";
 import api from "../lib/axios";
+import { CuisineType, FamilyMember, IngredientType } from "../lib/constants.js";
 
 const ErrorMsg = ({ message }) => (
     <div style={{
@@ -20,7 +21,7 @@ export default function EditDish({ isOpen, onClose, dish, onSaved, mode = "edit"
 
     const [form, setForm] = useState({
         name: "",
-        cuisine: "asian",
+        cuisine: CuisineType.ASIAN,
         ingredients: [],
         preferences: [],
         lastEaten: "",
@@ -28,19 +29,10 @@ export default function EditDish({ isOpen, onClose, dish, onSaved, mode = "edit"
     const [isSaving, setIsSaving] = useState(false);
     const [errors, setErrors] = useState({});
 
-    const ingredientOptions = [
-        { value: 'red meat', label: 'Red Meat' },
-        { value: 'pork', label: 'Pork' },
-        { value: 'chicken', label: 'Chicken' },
-        { value: 'seafood', label: 'Seafood' },
-        { value: 'eggs', label: 'Eggs' },
-        { value: 'bread', label: 'Bread' },
-        { value: 'noodles', label: 'Noodles' },
-        { value: 'pasta', label: 'Pasta' },
-        { value: 'rice', label: 'Rice' },
-        { value: 'soup', label: 'Soup' },
-        { value: 'vegetables', label: 'Vegetables' }
-    ];
+    const ingredientOptions = Object.entries(IngredientType).map(([key, value]) => ({
+        value,
+        label: key.charAt(0).toUpperCase() + key.slice(1).toLowerCase().replace('_', ' ')
+    }));
 
     // initialise form data when modal opens / mode changes
     useEffect(() => {
@@ -50,7 +42,7 @@ export default function EditDish({ isOpen, onClose, dish, onSaved, mode = "edit"
         if (isNew) {
             setForm({    // resetting form for new dish
                 name: "",
-                cuisine: "asian",
+                cuisine: CuisineType.ASIAN,
                 ingredients: [],
                 preferences: [],
                 lastEaten: "",
@@ -58,7 +50,7 @@ export default function EditDish({ isOpen, onClose, dish, onSaved, mode = "edit"
         } else if (dish) {
             setForm({     // populate form for editing
                 name: dish.name || "",
-                cuisine: dish.cuisine || "asian",
+                cuisine: dish.cuisine || CuisineType.ASIAN,
                 ingredients: Array.isArray(dish.ingredients) ? dish.ingredients : [],
                 preferences: Array.isArray(dish.preferences) ? dish.preferences : [],
                 lastEaten: dish.lastEaten || "",
@@ -213,10 +205,11 @@ export default function EditDish({ isOpen, onClose, dish, onSaved, mode = "edit"
                                 value={form.cuisine}
                                 onChange={(e) => {updateForm({ cuisine: e.target.value })}}
                             >
-                                <option value="asian">Asian</option>
-                                <option value="chinese">Chinese</option>
-                                <option value="japanese">Japanese</option>
-                                <option value="western">Western</option>
+                                {Object.entries(CuisineType).map(([key, value]) => (
+                                    <option key={value} value={value}>
+                                        {key.charAt(0).toUpperCase() + key.slice(1).toLowerCase()}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 
@@ -237,24 +230,23 @@ export default function EditDish({ isOpen, onClose, dish, onSaved, mode = "edit"
                         <div className="field">
                             <label>Preferences</label>
                             <div className="prefs-row">
-                                {["Hubert", "Cherry", "Haley", "Ryan", "Meagan"].map((member) => {
-                                    const memberKey = member.toLowerCase();
-                                    const isChecked = Array.isArray(form.preferences) && form.preferences.includes(memberKey);
+                                {Object.entries(FamilyMember).map(([key, value]) => {
+                                    const isChecked = Array.isArray(form.preferences) && form.preferences.includes(value);
                                     return (
-                                        <label key={memberKey} className={`pref-pill ${isChecked ? "checked" : ""}`}>
+                                        <label key={value} className={`pref-pill ${isChecked ? "checked" : ""}`}>
                                             <input
                                                 type="checkbox"
-                                                value={memberKey}
+                                                value={value}
                                                 checked={isChecked}
                                                 onChange={() => {
                                                     const updated = isChecked
-                                                        ? form.preferences.filter((p) => p !== memberKey)
-                                                        : [...form.preferences, memberKey];
+                                                        ? form.preferences.filter((p) => p !== value)
+                                                        : [...form.preferences, value];
                                                     updateForm({ preferences: updated });
                                                     if (errors.preferences) setErrors({...errors, preferences: null});
                                                 }}
                                             />
-                                            <span>{member.charAt(0).toUpperCase() + member.slice(1)}</span>
+                                            <span>{key.charAt(0).toUpperCase() + key.slice(1)}</span>
                                         </label>
                                     );
                                 })}
