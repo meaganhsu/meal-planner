@@ -171,7 +171,17 @@ export async function updateLastEaten(req, res) {
 
         // validating that last eaten is provided
         if (!lastEaten) {
-            return res.status(400).json({ message: "lastEaten date is required" });
+            // allowing null to clear the lastEaten date
+            const updatedDish = await Dish.findByIdAndUpdate(
+                id,
+                { $set: { lastEaten: null } },
+                { new: true }
+            );
+
+            return res.status(200).json({
+                message: "last eaten date cleared successfully",
+                dish: updatedDish
+            });
         }
 
         const newDate = new Date(lastEaten);
@@ -197,19 +207,6 @@ export async function updateLastEaten(req, res) {
             return res.status(404).json({ message: "dish not found" });
         }
 
-        // getting current lastEaten that is not in the future
-        const currentLastEaten = existingDish.lastEaten ? new Date(existingDish.lastEaten) : null;
-
-        // only updating if new date is more recent than current (but still not future)
-        if (currentLastEaten && newDate <= currentLastEaten) {
-            return res.status(200).json({
-                message: "new date is not more recent, last eaten not updated",
-                currentLastEaten: currentLastEaten,
-                proposedDate: newDate,
-                skipped: true
-            });
-        }
-
         // updating the lastEaten date
         const updatedDish = await Dish.findByIdAndUpdate(
             id,
@@ -219,7 +216,6 @@ export async function updateLastEaten(req, res) {
 
         res.status(200).json({
             message: "last eaten date updated successfully",
-            previousDate: currentLastEaten,
             newDate: newDate,
             dish: updatedDish
         });

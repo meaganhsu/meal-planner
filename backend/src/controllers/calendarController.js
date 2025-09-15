@@ -1,5 +1,6 @@
 import Calendar from "../models/Calendar.js";
 import { format, startOfWeek, addWeeks } from 'date-fns';
+import mongoose from "mongoose";
 
 // helper function for formatting dates year month day
 const formatDate = (date) => {
@@ -109,5 +110,62 @@ export async function initialiseWeeks(req, res) {
     } catch (e) {
         console.error('error initialising weeks:', e);
         res.status(500).json({ message: 'internal error', error: e.message });
+    }
+}
+
+export async function getDishLastOccurrence(req, res) {
+    try {
+        const { id } = req.params;
+
+        // validating dish ID format
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: "Invalid dish ID format" });
+        }
+
+        // searching through all calendar entries
+        const calendarEntries = await Calendar.find({
+            $or: [
+                { "lunch": { $exists: true, $ne: {} } },
+                { "dinner": { $exists: true, $ne: {} } }
+            ]
+        }).sort({ weekStart: -1 });    // sorting by most recent weeks first
+
+        let lastEatenDate = null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        for (const entry of calendarEntries) {
+            // check if date is alr found and this week is older
+            if (lastEatenDate) {
+                const weekStartDate = new Date(entry.weekStart);
+                if (weekStartDate < lastEatenDate) {
+                    break;      // no need to check older weeks
+                }
+            }
+
+            // checking both lunch and dinner
+            for (const mealType of ['lunch', 'dinner']) {
+                const meals = entry[mealType] || {};
+                for (const [dateKey, dishIds] of Object.entries(meals)) {
+                    if (Array.isArray(dishIds) && dishIds.includes(id)) {
+                        const date = new Date(dateKey);
+                        date.setHours(0, 0, 0, 0);
+
+                        // only consider past dates aka not tdy or future
+                        if (date < today && (!lastEatenDate || date > lastEatenDate)) {
+                            lastEatenDate = date;
+                        }
+                    }
+                }
+            }
+        }
+
+        res.json({
+            lastEatenDate: lastEatenDate ? lastEatenDate.toISOString() : null,
+            dishId: id
+        });
+    } catch (e) {
+        console.error('Error finding dish last occurrence:', e);
+        res.status(500).json({ message: 'Internal server error', error: e.message });
     }
 }

@@ -264,7 +264,16 @@ const Calendar = () => {
 
         setMealPlan(updatedMealPlan);
         await saveMealPlan(updatedMealPlan);
-        await updateLastEaten(dish._id, selectedSlot.date);
+
+        // only updating lastEaten if the dish is added to today or a past date
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const slotDate = new Date(selectedSlot.date);
+        slotDate.setHours(0, 0, 0, 0);
+
+        if (slotDate <= today) {
+            await updateLastEaten(dish._id, selectedSlot.date);
+        }
     };
 
     // update dish last eaten date in the database
@@ -274,15 +283,15 @@ const Calendar = () => {
         const mealDate = new Date(date);
         mealDate.setHours(0, 0, 0, 0);
 
+        // only update lastEaten for past/current dates not future dates
         if (mealDate <= today) {
             try {
                 const response = await api.patch(`/dishes/${dishId}/last-eaten`, {
                     lastEaten: date.toISOString()
                 });
 
-                const result = response.data;
-
-                if (!result.skipped) {
+                // checking if the update was successful (not skipped)
+                if (!response.data.skipped) {
                     const dish = dishes.find(d => d._id === dishId);
                     if (dish) {
                         const updatedDishes = dishes.map(d =>
@@ -293,6 +302,7 @@ const Calendar = () => {
                         setDishes(updatedDishes);
                     }
                 }
+
             } catch (error) {
                 console.error("Error updating last eaten date:", error);
             }
@@ -315,24 +325,21 @@ const Calendar = () => {
         setMealPlan(updatedMealPlan);
         await saveMealPlan(updatedMealPlan);
 
-        // check whether the dish still exists in current day slots
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const todayKey = format(today, 'yyyy-MM-dd');
+        const mealDate = new Date(dateKey);
+        mealDate.setHours(0, 0, 0, 0);
 
-        // if removing from current day slot, check if dish exists elsewhere today
-        if (dateKey === todayKey) {
+        // if removing from today's slot recalculate lastEaten
+        if (mealDate.getTime() === today.getTime()) {
+            // checking if the dish still exists in any of today's slots
             const stillExistsToday = ['lunch', 'dinner'].some(meal => {
-                if (meal === mealType) {
-                    return (updatedMealPlan[meal][todayKey] || []).includes(dishId);    // checking updated plan for this meal type
-                } else {
-                    return (updatedMealPlan[meal][todayKey] || []).includes(dishId);    // check current plan for other meal types
-                }
+                const dishesInSlot = updatedMealPlan[meal][dateKey] || [];
+                return dishesInSlot.includes(dishId);
             });
 
-            if (!stillExistsToday) {
-                await recalculateLastEaten(dishId);      // if dish doesnt exists in any of todays slots then recalculate
-            }
+            // if the dish is completely removed from today, recalculate lastEaten
+            if (!stillExistsToday) await recalculateLastEaten(dishId);
         }
 
         setActiveMenu(null);
@@ -340,55 +347,76 @@ const Calendar = () => {
 
     const recalculateLastEaten = async (dishId) => {
         try {
-            // find most recent date dish appears in the meal plan
-            let mostRecentDate = null;
+            console.log(`Recalculating lastEaten for dish: ${dishId}`);
 
-            // check current week
-            for (const mealType of ['lunch', 'dinner']) {
-                for (const [dateKey, dishIds] of Object.entries(mealPlan[mealType] || {})) {
-                    if (dishIds.includes(dishId)) {
-                        const date = new Date(dateKey);
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
+            // first try to get the last occurrence from the server
+            try {
+                const response = await api.get(`/calendar/dish-last-occurrence/${dishId}`);
+                if (response.data.lastEatenDate) {
+                    const lastEatenDate = new Date(response.data.lastEatenDate);
+                    console.log(`Found last occurrence from server: ${lastEatenDate}`);
 
-                        // only consider past dates (not including today since it's removing from today)
-                        if (date < today && (!mostRecentDate || date > mostRecentDate)) {
-                            mostRecentDate = date;
-                        }
-                    }
+                    // updating the lastEaten date
+                    await updateLastEaten(dishId, lastEatenDate);
+                    return;
+                } else {
+                    console.log("No last occurrence found in server search");
                 }
+            } catch (e) {
+                console.log("Server search failed, falling back to client search:", e);
             }
 
-            // check other loaded weeks
-            for (const [weekStartKey, weekPlan] of Object.entries(allWeekPlans)) {
-                if (weekStartKey === weekStart) continue; // skip current week
+            // fallback search through loaded weeks
+            let mostRecentDate = null;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
+            // search function to check a meal plan
+            const searchInMealPlan = (plan, planWeekStart) => {
                 for (const mealType of ['lunch', 'dinner']) {
-                    for (const [dateKey, dishIds] of Object.entries(weekPlan[mealType] || {})) {
-                        if (dishIds.includes(dishId)) {
+                    for (const [dateKey, dishIds] of Object.entries(plan[mealType] || {})) {
+                        if (Array.isArray(dishIds) && dishIds.includes(dishId)) {
                             const date = new Date(dateKey);
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0);
+                            date.setHours(0, 0, 0, 0);
 
+                            // only consider past dates (not today or future)
                             if (date < today && (!mostRecentDate || date > mostRecentDate)) {
                                 mostRecentDate = date;
+                                console.log(`Found occurrence in ${planWeekStart}: ${dateKey}`);
                             }
                         }
                     }
                 }
+            };
+
+            searchInMealPlan(mealPlan, weekStart);      // checking the current week
+
+            for (const [weekStartKey, weekPlan] of Object.entries(allWeekPlans)) {   // check other loaded weeks
+                if (weekStartKey !== weekStart) {
+                    searchInMealPlan(weekPlan, weekStartKey);
+                }
             }
 
-            // only update if we found a valid previous date
             if (mostRecentDate) {
+                console.log(`Using most recent date: ${mostRecentDate}`);
                 await updateLastEaten(dishId, mostRecentDate);
             } else {
-                // if no previous date found, clear the last eaten date --> never
-                const updatedDishes = dishes.map(d =>
-                    d._id === dishId
-                        ? { ...d, lastEaten: undefined }
-                        : d
-                );
-                setDishes(updatedDishes);
+                // if no previous date found then clear the last eaten date
+                console.log("No past occurrences found, clearing lastEaten");
+                try {
+                    await api.patch(`/dishes/${dishId}/last-eaten`, {
+                        lastEaten: null
+                    });
+
+                    const updatedDishes = dishes.map(d =>       // updating local state
+                        d._id === dishId
+                            ? { ...d, lastEaten: undefined }
+                            : d
+                    );
+                    setDishes(updatedDishes);
+                } catch (e) {
+                    console.error("Error clearing last eaten date:", e);
+                }
             }
         } catch (e) {
             console.error("Error recalculating last eaten date:", e);
@@ -413,24 +441,20 @@ const Calendar = () => {
         setMealPlan(updatedMealPlan);
         await saveMealPlan(updatedMealPlan);
 
-        // if clearing today's slot, recalculate last eaten dates for all removed dishes
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const todayKey = format(today, 'yyyy-MM-dd');
+        const mealDate = new Date(dateKey);
+        mealDate.setHours(0, 0, 0, 0);
 
-        if (dateKey === todayKey) {
+        // if clearing today's slot, check each removed dish
+        if (mealDate.getTime() === today.getTime()) {
             for (const dishId of removedDishIds) {
-                const existsToday = ['lunch', 'dinner'].some(meal => {
-                    if (meal === mealType) {
-                        return false;
-                    } else {
-                        return (updatedMealPlan[meal][todayKey] || []).includes(dishId);
-                    }
-                });
+                // check if the dish still exists in the other meal slot today
+                const otherMealType = mealType === 'lunch' ? 'dinner' : 'lunch';
+                const existsInOtherSlot = (updatedMealPlan[otherMealType][dateKey] || []).includes(dishId);
 
-                if (!existsToday) {
-                    await recalculateLastEaten(dishId);
-                }
+                // if the dish does not exist in any of todays slots, recalculate
+                if (!existsInOtherSlot) await recalculateLastEaten(dishId);
             }
         }
 
