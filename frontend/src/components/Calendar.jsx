@@ -31,14 +31,16 @@ const Calendar = () => {
 
     // check if previous week navigation is allowed
     const canGoPrev = () => {
-        const minDate = subWeeks(today, 2);
-        return !isBefore(startOfWeek(addDays(currentDate, -7)), minDate);
+        const minAllowedWeek = startOfWeek(subWeeks(today, 2), { weekStartsOn: 1 });
+        const targetWeek = startOfWeek(addDays(currentDate, -7), { weekStartsOn: 1 });
+        return targetWeek.getTime() >= minAllowedWeek.getTime();
     };
 
     // check if next week navigation is allowed
     const canGoNext = () => {
-        const maxDate = addWeeks(today, 2);
-        return !isAfter(startOfWeek(addDays(currentDate, 7)), startOfWeek(maxDate));
+        const maxDate = startOfWeek(addWeeks(today, 2), { weekStartsOn: 1 });
+        const nextWeekStart = startOfWeek(addDays(currentDate, 7), { weekStartsOn: 1 });
+        return nextWeekStart <= maxDate;
     };
 
     // check if a date is editable
